@@ -1,0 +1,380 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% University Assignment Title Page 
+% LaTeX Template
+% Version 1.0 (27/12/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% WikiBooks (http://en.wikibooks.org/wiki/LaTeX/Title_Creation)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+% Instructions for using this template:
+% This title page is capable of being compiled as is. This is not useful for 
+% including it in another document. To do this, you have two options: 
+%
+% 1) Copy/paste everything between \begin{document} and \end{document} 
+% starting at \begin{titlepage} and paste this into another LaTeX file where you 
+% want your title page.
+% OR
+% 2) Remove everything outside the \begin{titlepage} and \end{titlepage} and 
+% move this file to the same directory as the LaTeX file you wish to add it to. 
+% Then add \input{./title_page_1.tex} to your LaTeX file where you want your
+% title page.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\title{Title page with logo}
+%----------------------------------------------------------------------------------------
+%   PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{float}
+\usepackage[margin=1.0in]{geometry}
+
+%\addtolength{\oddsidemargin}{-.875in}
+%	\addtolength{\evensidemargin}{-.875in}
+%	\addtolength{\textwidth}{1.75in}
+%
+%	\addtolength{\topmargin}{-.875in}
+%	\addtolength{\textheight}{1.75in}
+
+\newcommand{\ts}{\textsuperscript}
+
+\begin{document}
+
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\center % Center everything on the page
+ 
+%----------------------------------------------------------------------------------------
+%   HEADING SECTIONS
+%----------------------------------------------------------------------------------------
+
+\textsc{\LARGE CS7004 / Embedded Systems}\\[1.5cm] % Name of your university/college
+\textsc{\Large Coursework Project}\\[0.5cm] % Major heading such as course name
+\textsc{\Large Lecture Theatre Lighting Control System}\\[0.5cm] % Minor heading such as course title
+
+%----------------------------------------------------------------------------------------
+%   TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Implementation Report}\\[0.4cm] % Title of your document
+\HRule \\[1.5cm]
+ 
+%----------------------------------------------------------------------------------------
+%   AUTHOR SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Student Name:}\\
+Fan \textsc{Li} (14301044) % Your name
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Lecturer:} \\
+Jonathan \textsc{Dukes} % Supervisor's Name
+\end{flushright}
+\end{minipage}\\[2cm]
+
+% If you don't want a supervisor, uncomment the two lines below and remove the section above
+%\Large \emph{Author:}\\
+%John \textsc{Smith}\\[3cm] % Your name
+
+%----------------------------------------------------------------------------------------
+%   DATE SECTION
+%----------------------------------------------------------------------------------------
+
+%{\large \today}\\[2cm] % Date, change the \today to a set date if you want to be precise
+{\large December 19, 2016}\\[2cm] % Date, change the \today to a set date if you want to be precise
+%----------------------------------------------------------------------------------------
+%   LOGO SECTION
+%----------------------------------------------------------------------------------------
+
+\includegraphics{trinity.jpg}\\[1cm] % Include a department/university logo - this will require the graphicx package
+ 
+%----------------------------------------------------------------------------------------
+
+\vfill % Fill the rest of the page with whitespace
+
+\end{titlepage}
+
+
+%\begin{abstract}
+%Your abstract.
+%\end{abstract}
+
+\section{Description}
+
+In this lab assignment, the main task is to design an embedded system to control the LED lighting in a lecture theatre. This is based on the \textit{LPC2468} development kit and the \textit{FreeRTOS} operating system.  \\
+
+The lighting system will devide the lecture theatre into four zones: the whiteboard spotlights, the lecture area, the aisle lighting and the seating area. Each LED connected to the \textit{PCA9532 LED dimmer }are used to represent the lighting for one zone. The user interface which is displayed on the LCD with touchscreen can control these lights to be turned on/off, increase/decrease brightness and show states of motion sensors in each area. The master can control 4 LEDs at the same time, the LED on Pin P2.10 simulates the state of master. A reconfigurable preset is designed to fast control the states of four LEDs. The PIR motion sensors are used to automatically turn on the light when motion is detected in different parts of room, which are simulated by three push buttons. By degrees, the light gradually faded and eventually turned off within a preset time. However, there is no PIR sensor in the seat area since it's not reasonable to make people sit still and doesn't move, I use one button to simulate the smoke sensor which can trigger the smoke alarm.   \\
+
+In summery, the functionality of the lighting system are:
+\begin{itemize}
+\item \textbf{Master on/off switch for the lighting system}, simultaneously control lighting states of four zones, the master state is represented by LED on Pin P2.10. If master is not turned on, all the four LEDs can't be turned on or dim except a smoke alarm is triggered.
+\item \textbf{Independent on/off/dimmer control of each area}. This functionality only works when master is on. The brightness parameters are: 1 (turn on), 0.5, 0.1, 0 (turn off).
+\item \textbf{Stored and configurable preset}: a default preset is stored in the program, user can update the preset value by storing the current lighting state. This functionality won't work unless master is on.
+\item \textbf{PIR motion sensor}: When a motion is detected, the correspond sensor on LCD will turn red, if the light of correspond area is turned off currently, it will automatically turned on, gradually faded and eventually turned off after 3 seconds. Motion sensor doesn't work if smoke alarm is on.
+\item\textbf{Smoke alarm}: If a smoke alarm is triggered (push-button 3 is pressed), the four LEDs will be automatically turned on, the LED on Pin P2.10 will blink and the smoke alarm on LCD will flash red and cyan. The alarm will last for 5 seconds and the 4 LED will convert back to original state before the alarm is triggered.
+\end{itemize}
+
+
+
+
+\section{Design}
+\subsection{User Interface}
+Based on the functionality, a simple UI which has a set of buttons are displayed on LCD touch screen. The role of each button and LED is shown in Figure~\ref{fig:UI}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{UI.png}
+\caption{\label{fig:UI}\textit{User Interface}}
+\end{figure}
+ 
+The four buttons in 1\ts{st} row is the master on/off/dimmer switch which can control LED$_0$ to LED$_4$. The whole system won't work until the master is turned on. From the 2\ts{nd} row, the buttons are lighting controllers of each zone, which means they only affect the LED corresponded to that particular area.\\
+
+In this system, the brightness is divided into 3 levels: full brightness, 50\% dim and 90\% dim. Once the "+" button is pressed, the brightness of corresponding LED$_x$ is adjusted to its upper level. If it's already fully lit up, just keep the brightness. Similarly, if "-" button is pressed, the brightness goes down to its lower level. If it's already turned off, just keep the current state.
+
+\subsection{Command Message}
+The command is the message type which is exchanged via queue, it contains two factors: index of LED and value. The Index is used to identify correspond LED, the command value is used to perform specified functionality when tasks receive the message from queue. A set of predefined commands value are shown below, most of them are produced by LCD and sent to sensor except 2 commands: FIREALARM and PIR\_MotionDetected. Separating the command value produced by different tasks is important since it prevents the possible mess when two tasks both sending and receiving from a same queue.
+\begin{itemize}
+\item \textbf{LED\_ON/LED\_OFF}: Command to on/off switch.
+\item \textbf{DIM\_INCREASE/DIM\_DECREASE}: Command to dimmer control.
+\item \textbf{PIR\_MotionDetected/PIR\_MotionAction}: When motion detected command is received, the program will check the state of master (master on) and state of corresponding LED state (LED off) before performing the action.
+\item \textbf{STORE\_PRESET/USE\_PRESET}: Command to store and use the reconfigurable preset. 
+\item \textbf{FIREALARM/AUTO\_STORE/ALARM\_RESTORE}: Command to trigger smoke alarm and restore system. 
+\end{itemize}
+
+\subsection{Task synchronize}
+The interaction between user and the lighting system is mainly two actions: touch the LCD display screen and press the push-buttons. The approaches to detect these events are polling and interrupts. The touch screen can raise interrupt when it's touched, but to detect the touch position the interrupts should be disabled. Here a binary semaphore is used to synchronize the LCD task, the process is shown in Figure~\ref{fig:semaphore}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{semaphore.png}
+\caption{\label{fig:semaphore}\textit{Task synchronize}}
+\end{figure}
+
+\section{Implementation}
+The program structure is shown in Figure~\ref{fig:implementation}, the queue and semaphore are created in main() function and passed as parameters to tasks. Initially I was using two queues, one stored the messages sent from sensor to LCD, the other stored messages sent from LCD to sensor. However using two queues increase a large amount processing time in each loop. Since there is no conflict on commands from different task, I used single queue in the end.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{implementation.png}
+\caption{\label{fig:implementation}\textit{Program Structure}}
+\end{figure}
+
+\subsection{Turn on/off switch}
+To turn on or off the LEDs, we need to write expected LED state to \textit{PCA9532 LED Controller} register. For switch of each LED, it's necessary to reserve the state of other LEDs while turn on/off a particular LED. The \textbf{bit operation logic} I used has two steps: first clear the correspond 2 bits of LED$_x$\footnote{LED$_x$: The particular LED correspond to the button pressed} using AND operation, then write 0 (off) or 1 (on) to those bits using OR operation. The state compute formula and data transfer process is shown in Figure~\ref{fig:switch}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{ledSwitch.png}
+\caption{\label{fig:switch}\textit{Write to PCD9532: on/off switch }}
+\end{figure}
+
+\subsection{Dimmer controller}
+
+The reason why designed 2-level dim is that we can use the 2 registers (PWM0 and PWM1) provided by \textit{PCA9532} to store the predefined dim parameters. The \textit{PWM0} saves the 50\% brightness value and \textit{PWM1} saves the 10\% brightness value. The dimmer control of LED$_x$ should not effect other LEDs, so the \textbf{bit operation logic} has three steps: first check the correspond 2 bits of LED$_x$ and get the current brightness level, clear those two bits using AND operation, then using OR to update the brightness level of LED$_x$. The process is shown in Figure~\ref{fig:logic flow}. The state compute formula and data transfer process is shown in Figure~\ref{fig:dimmer}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{logicFlow.png}
+\caption{\label{fig:logic flow}\textit{Dimmer control logic}}
+\centering
+\includegraphics[width=1.0\textwidth]{dimmer.png}
+\caption{\label{fig:dimmer}\textit{Write to PCD9532: dimmer }}
+\end{figure}
+
+\subsection{PIR Motion Sensor}
+Since PIR motion sensor is simulated by push-button and \textit{PCA9532} can't raise an interrupt, we need to poll the buttons' state at the frequency of 20ms to detect changes between previous state and new state. The process of reading from \textit{PCA9532} over I$^2$C is shown in Figure~\ref{fig:PIRSensor}. When a button is pushed and released, there are 2 changes detected. So the mod 2 operation is used to ensure that only one "button pushed" event is sent to queue. Also, the semaphore is given to LCD task when push-button is pressed to unblock LCD task. The logic flow is shown in Figure~\ref{fig:sensorLogicFlow}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{PIRSensor.png}
+\caption{\label{fig:PIRSensor}\textit{Read from PCD9532: PIR motion sensor state}}
+\end{figure}
+
+\subsubsection{Timer}
+After detecting a motion, the preset time to automatically turn off the light is 4 seconds. This is achieved by using \textit{Software Timer} provided by \textit{FreeRTOS}. In order to implement the gradually faded effect, the timer is set to 1 second. The timer's callback function is executed when the timer's period expires, this function will dim the brightness of correspond LED, redraw the sensor with red color on LCD, and reset the timer again, until the LED eventually turned off.\\
+
+If we want to implement a more precise timer, it's better to use physical timer rather than software timer. Initially I used the \textit{TIMER0} but the whole program is blocked. The reason is that \textit{FreeRTOS} uses \textit{TIMER0} to do the preempt, using \textit{TIMER0} will block \textit{FreeRTOS}. This problem should be avoided by using other physical timer.
+
+\subsection{Smoke Alarm}
+Since PIN P2.10 is used as \textit{GPIO} function, The smoke alarm is triggered when the 3\ts{rd} push-button is pressed (shown in Figure~\ref{fig:implementation}). If the smoke alarm is triggered, it will last for 5 seconds and all other functionalities of the system will be temporarily unavailable. In order to make LED P2.10 blink and smoke alarm flash red and cyan within the 5 seconds, the \textit{FreeRTOS} software timer is used again. Here the time period is set to 5 seconds, during this time, the semaphore is given to LCD task in each loop to prevent the task being blocked. A counter variable is increased in each loop, by using mod operation, the state of LED P2.10 and color of alarm sign on LCD are updated in a human visible frequency. When the time is due, timer callback function restore the lighting system by clearing the alarm flag and send ALARM\_RESTORE command to queue. The logic flow is shown in Figure~\ref{fig:sensorLogicFlow}.
+
+\begin{figure}%[H]
+\centering
+\includegraphics[width=0.7\textwidth]{sensorLogicFlow.png}
+\caption{\label{fig:sensorLogicFlow}\textit{Logic flow of motion detected event and alarm event}}
+\end{figure}
+
+\section{Test Cases}
+\subsection{Buttons on Touch Screen }
+
+{\renewcommand{\arraystretch}{1.3}%
+\begin{table}[H]
+\begin{tabular}{c|c c c c c|c c c c c}
+\textbf{Tested}& \textbf{Before}& &  & & &\textbf{After} & &  & & \\
+ \textbf{button} & LED$_0$(M) &LED$_1$& LED$_2$& LED$_3$& LED$_4$ & LED$_0$(M)& LED$_1$& LED$_2$& LED$_3$ &LED$_4$ \\\hline
+% & (Master) &(WhiteBoard)& (Lecturer)& (Seating)& (Aisle) & (Master) &(WhiteBoard)& (Lecturer)& (Seating)& (Aisle) \\
+Master "on" & off &off& off& off& off & on& on& on& on &on \\ 
+Master "off" & on &off& off& on& on & off& off& off& off &off \\\hline
+LED$_1$ "on" & on &off& on& off& off & on& on& on& off &off \\
+LED$_1$ "on" & off &off& off& off& off & off& off& off& off &off \\
+LED$_1$ "off" & on &on& off& on& on & on& off& off& on &on \\ \hline
+LED$_2$ "on" & on &off& off& off& off & on& off& on& off &off \\
+LED$_2$ "on" & off &off& off& off& off & off& off& off& off &off \\
+LED$_2$ "off" & on &on& on& on& on & on& on& off& on &on \\ \hline
+%Master OFF & LED0 &LED1& LED2& LED3& LED4 & LED0& LED1& LED2& LED3 &LED4
+\end{tabular}
+\caption{\label{tab:Switch}Test cases for switch buttons}
+\end{table}
+
+\begin{table}[H]
+\begin{tabular}{c|c c c c c|c c c c c}
+\textbf{Tested} &\textbf{Before} & && & & \textbf{After}&& &  &  \\
+ \textbf{button} & LED$_0$(M) &LED$_1$& LED$_2$& LED$_3$& LED$_4$ & LED$_0$(M)& LED$_1$& LED$_2$& LED$_3$ &LED$_4$ \\\hline
+% & (Master) &(WhiteBoard)& (Lecturer)& (Seating)& (Aisle) & (Master) &(WhiteBoard)& (Lecturer)& (Seating)& (Aisle) \\
+Master "+" & off &0& 0& 0& 0 & 0& 0& 0& 0 &0 \\ 
+Master "+" & on &0.1& 0.1& 0.1& 0.1 & on& 0.5& 0.5& 0.5 &0.5 \\ 
+Master "+" & on &1& 0.5&0.1& 0 & on& 1& 1& 0.5&0 \\ 
+Master "-" & on &1& 1& 1& 1 & on& 0.5& 0.5& 0.5 &0.5 \\
+Master "-" & on &1& 0.5& 0.5& 0 & on& 0.5& 0.1& 0.1 &0 \\\hline
+LED$_1$ "+" & off &0& 0& 0& 0 & off& 0& 0& 0 &0 \\
+LED$_1$ "+" & on &0.1& 0.1& 0.5& 1 & on& 0.5& 0.1& 0.5 &1 \\
+LED$_1$ "+" & on &0.5& 0.1& 0.5& 1 & on& 1& 0.1& 0.5 &1 \\
+LED$_1$ "-" & off &0  & 0& 0& 0 & off& 0& 0& 0 &0 \\ 
+LED$_1$ "-" & on &0.5& 0.1& 0.5& 1 & on& 0.1& 0.1& 0.5 &1 \\
+LED$_1$ "-" & on &1& 1& 1& 1 & on& 0.5& 1& 1 &1 \\ \hline
+%Master OFF & LED0 &LED1& LED2& LED3& LED4 & LED0& LED1& LED2& LED3 &LED4
+\end{tabular}
+\caption{\label{tab:Dimmer}Test cases for dimer (unit: brightness percentage)}
+\end{table}
+
+The default preset is: LED$_1$=1, LED$_2$=0.5, LED$_3$=0.1, LED$_4$=0. After storing another state: LED$_1$=0.1, LED$_2$=0, LED$_3$=1, LED$_4$=1, the preset is reconfigured. The second test case shows the updated preset value.
+\begin{table}[H]
+\begin{tabular}{c|c c c c c|c c c c c}
+\textbf{Tested} &\textbf{Before} & && & & \textbf{After}&& &  &  \\
+ \textbf{button} & LED$_0$(M) &LED$_1$& LED$_2$& LED$_3$& LED$_4$ & LED$_0$(M)& LED$_1$& LED$_2$& LED$_3$ &LED$_4$ \\\hline
+% & (Master) &(WhiteBoard)& (Lecturer)& (Seating)& (Aisle) & (Master) &(WhiteBoard)& (Lecturer)& (Seating)& (Aisle) \\
+%"preset" & off &0& 0& 0& 0 & 0& 0& 0& 0 &0 \\ 
+"preset" & on &1& 1& 1& 1 & on& 1& 0.5& 0.1 &0 \\ \hline
+"preset" & on &1& 1& 1& 0.5 & on& 0.1& 0& 1 &1 \\ \hline
+%Master OFF & LED0 &LED1& LED2& LED3& LED4 & LED0& LED1& LED2& LED3 &LED4
+\end{tabular}
+\caption{\label{tab:Dimmer}Test cases for preset}
+\end{table}
+
+\subsection{Push-button}
+
+\begin{table}[H]
+\begin{tabular}{c|c c|c c|c c}
+\textbf{Tested} &\textbf{Before} & & \textbf{0s later}& &\textbf{5s later}& \\
+ \textbf{button} & LED$_0$(M) & LED$_1$ - LED$_4$ & LED$_0$(M)&LED$_1$ - LED$_4$ & LED$_0$(M)&LED$_1$ - LED$_4$ \\\hline
+ Button 3 & off & 0, 0, 0, 0 &blink& 1, 1, 1, 1  &off& 0, 0, 0, 0 \\
+  &   & Cyan && Cyan/Red && Cyan  \\ \hline
+  Button 3 & on & 1, 1, 0.5, 0 &blink& 1, 1, 1, 1 &on& 1, 1, 0.5, 0 \\
+  &   & Cyan && Cyan/Red && Cyan  \\ \hline
+\end{tabular}
+\caption{\label{tab:alarm}Test cases for Smoke Sensor }
+\end{table}
+
+\begin{table}[H]
+\begin{tabular}{c|c c| c|c|c|c}
+\textbf{Tested} &\textbf{Before} & & \textbf{0s later}& \textbf{1s later}& \textbf{2s later} & \textbf{3s later} \\
+ \textbf{button} & LED$_0$(M) & LED$_1$ - LED$_4$ & LED$_1$ - LED$_4$ & LED$_1$ - LED$_4$ & LED$_1$ - LED$_4$ & LED$_1$ - LED$_4$ \\\hline
+ Button 1 & off & 0, 0, 0, 0 & 0, 0, 0, 0 & 0, 0, 0, 0 & 0, 0, 0, 0 & 0, 0, 0, 0 \\
+  &   & Grey & Grey &Grey & Grey & Grey \\ \hline
+ Button 1 & on & 0, 1, 1, 0.5 & 1, 1, 1, 0.5 & 0.5, 1, 1, 0.5 & 0.1, 1, 1, 0.5 & 0, 1, 1, 0.5 \\
+ &   & Grey & Red &Grey & Grey & Grey \\
+\hline
+Button 4 & off & 0, 0, 0, 0 & 0, 0, 0, 0 & 0, 0, 0, 0 & 0, 0, 0, 0 & 0, 0, 0, 0 \\
+  &   & Grey & Grey &Grey & Grey & Grey \\ \hline
+ Button 4 & on & 0, 1, 1, 0 & 0, 1, 1, 1 & 0, 1, 1, 0.5 & 0, 1, 1, 0.1 & 0, 1, 1, 0 \\
+ &   & Grey & Red &Grey & Grey & Grey \\
+\hline
+\end{tabular}
+\caption{\label{tab:sensor}Test cases for PIR motion sensors (unit: brightness percentage)}
+\end{table}
+
+\subsection{Source Code}
+\textit{Github} link: https://github.com/vladdie/lighting-system.git
+
+%\section{Conclusion}
+
+
+\begin{thebibliography}{99}
+ 
+\bibitem{online} \textquotedblleft RTOS: Session20, FreeRtos: Software Timers \textquotedblright ,\\
+URL:\textit{https://www.youtube.com/watch?v=bwKxGymYRmo},
+Access time:12/15/2016.
+
+\bibitem{online} \textquotedblleft FreeRTOS online API reference \textquotedblright ,\\
+URL:\textit{http://www.freertos.org/a00106.html},
+Last access time:12/18/2016.
+ 
+\bibitem{} \textquotedblleft PCA9532 Data Sheet\textquotedblright ,\\
+URL:\textit{https://tcd.blackboard.com/bbcswebdav/pid-739225-dt-content-rid-2474192\_1/courses/CS7004-A-Y-201617/PCA9532.pdf}, page 4-8.
+
+\bibitem{} \textquotedblleft LPC2468 Base Board Schematic\textquotedblright ,\\
+URL:\textit{https://tcd.blackboard.com/bbcswebdav/pid-769729-dt-content-rid-2596676\_1/courses/CS7004-A-Y-201617/assignment.pdf}, page 4.
+ 
+\end{thebibliography}
+%Comments can be added to the margins of the document using the \todo{Here's a comment in the margin!} todo command, as shown in the example on the right. You can also add inline comments too:
+
+%\todo[inline, color=green!40]{This is an inline comment.}
+
+% Commands to include a figure:
+%\begin{figure}
+%\centering
+%\includegraphics[width=0.5\textwidth]{trinity.jpg}
+%\caption{\label{fig:frog}This is a figure caption.}
+%\end{figure}
+
+%\begin{table}
+%\centering
+%\begin{tabular}{l|r}
+%Item & Quantity \\\hline
+%Widgets & 42 \\
+%Gadgets & 13
+%\end{tabular}
+%\caption{\label{tab:widgets}An example table.}
+%\end{table}
+
+%\subsection{Mathematics}
+%
+%\LaTeX{} is great at typesetting mathematics. Let $X_1, X_2, \ldots, X_n$ be a sequence of independent and identically distributed random variables with $\text{E}[X_i] = \mu$ and $\text{Var}[X_i] = \sigma^2 < \infty$, and let
+%$$S_n = \frac{X_1 + X_2 + \cdots + X_n}{n}
+%      = \frac{1}{n}\sum_{i}^{n} X_i$$
+%denote their mean. Then as $n$ approaches infinity, the random variables $\sqrt{n}(S_n - \mu)$ converge in distribution to a normal $\mathcal{N}(0, \sigma^2)$.
+%
+%\subsection{Lists}
+%
+%You can make lists with automatic numbering \dots
+%
+%\begin{enumerate}
+%\item Like this,
+%\item and like this.
+%\end{enumerate}
+%\dots or bullet points \dots
+%\begin{itemize}
+%\item Like this,
+%\item and like this.
+%\end{itemize}
+
+\end{document}
